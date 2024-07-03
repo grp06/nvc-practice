@@ -2,3 +2,4 @@ streamlit
 openai
 streamlit-audiorecorder
 ffmpeg-python
+ffmpeg
