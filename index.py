@@ -4,14 +4,10 @@ import os
 from audiorecorder import audiorecorder
 import io
 
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    st.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
-    st.stop()
 
-client = OpenAI(api_key=api_key)
 
-def transcribe_audio(audio_file):
+def transcribe_audio(audio_file, client):
+    # Add 'client' parameter
     transcription = client.audio.transcriptions.create(
         model="whisper-1", 
         file=audio_file
@@ -63,7 +59,7 @@ def main():
         audio_file.name = "recording.wav"
 
         with st.spinner("Transcribing..."):
-            transcription = transcribe_audio(audio_file)
+            transcription = transcribe_audio(audio_file, client)
         
         st.write("Transcription:")
         st.write(transcription)
