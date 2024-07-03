@@ -11,16 +11,6 @@ if not api_key:
 
 client = OpenAI(api_key=api_key)
 
-def get_ai_response(scenario):
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "The user is going to give you a scenario to practice non-violent communication. When they give you the scenario, your only job is to respond with a single statement or accusation from the other party. It should be moderly inflammatory. The user will then reply to it. Dont put it in quotes."},
-            {"role": "user", "content": scenario}
-        ]
-    )
-    return response.choices[0].message.content
-
 def transcribe_audio(audio_file):
     transcription = client.audio.transcriptions.create(
         model="whisper-1", 
@@ -28,53 +18,54 @@ def transcribe_audio(audio_file):
     )
     return transcription.text
 
-def get_feedback(initial_prompt, user_response):
+def get_feedback(scenario, user_response, client):
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "The user is roleplaying a non-violent communication game."},
-            {"role": "user", "content": f"The initial prompt is '{initial_prompt}' and the user responded this: '{user_response}'. Give feedback"}
+            {"role": "system", "content": "The user is roleplaying a non-violent communication game. They will provide a scenario and their response. Provide feedback on their response."},
+            {"role": "user", "content": f"Scenario: {scenario}\nUser's response: {user_response}\nGive feedback on the user's response in the context of non-violent communication."}
         ]
     )
     return response.choices[0].message.content
 
 def main():
-    st.title("Scenario Input App")
+    st.title("Non-Violent Communication Practice")
 
-    if 'ai_response' not in st.session_state:
-        st.session_state.ai_response = None
+    if 'api_key' not in st.session_state:
+        st.session_state.api_key = None
+
+    if not st.session_state.api_key:
+        api_key = st.text_input("Enter your OpenAI API key:", type="password")
+        if st.button("Submit API Key"):
+            if api_key:
+                st.session_state.api_key = api_key
+                st.experimental_rerun()
+            else:
+                st.warning("Please enter an API key.")
+        return
+
+    client = OpenAI(api_key=st.session_state.api_key)
 
     st.text("Enter a scenario")
     scenario = st.text_input("Scenario", key="scenario_input", label_visibility="collapsed")
 
-    if st.button("Submit Scenario"):
-        if scenario:
-            with st.spinner("Processing..."):
-                st.session_state.ai_response = get_ai_response(scenario)
-        else:
-            st.warning("Please enter a scenario before submitting.")
+    audio = audiorecorder("Start Recording", "Stop Recording")
+    
+    if len(audio) > 0:
+        audio_file = io.BytesIO(audio.export().read())
+        audio_file.name = "recording.wav"
 
-    if st.session_state.ai_response:
-        st.write("Respond to this:")
-        st.write(st.session_state.ai_response)
+        with st.spinner("Transcribing..."):
+            transcription = transcribe_audio(audio_file)
         
-        audio = audiorecorder("Start Recording", "Stop Recording")
+        st.write("Transcription:")
+        st.write(transcription)
+
+        with st.spinner("Getting feedback..."):
+            feedback = get_feedback(scenario, transcription, client)
         
-        if len(audio) > 0:
-            audio_file = io.BytesIO(audio.export().read())
-            audio_file.name = "recording.wav"
-
-            with st.spinner("Transcribing..."):
-                transcription = transcribe_audio(audio_file)
-            
-            st.write("Transcription:")
-            st.write(transcription)
-
-            with st.spinner("Getting feedback..."):
-                feedback = get_feedback(st.session_state.ai_response, transcription)
-            
-            st.write("Feedback:")
-            st.write(feedback)
+        st.write("Feedback:")
+        st.write(feedback)
 
 if __name__ == "__main__":
     main()
