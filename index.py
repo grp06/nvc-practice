@@ -23,7 +23,14 @@ def get_feedback(scenario, user_response, client):
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "The user is roleplaying a non-violent communication game. They will provide a scenario and their response. Provide feedback on their response."},
-            {"role": "user", "content": f"Scenario: {scenario}\nUser's response: {user_response}\nGive feedback on the user's response in the context of non-violent communication."}
+            {"role": "user", "content": f"""Scenario: {scenario}\nUser's response: {user_response}
+
+You must start your response with a score 1-10. 1 being the worst, 10 being the best.
+
+Then give a detailed explanation of why you gave that score. Don't explain what NVC is just give me a score and an explanation.
+
+Finally, I want you to give an "optimal" response. For this last segment, only write out the optimal response.
+"""}
         ]
     )
     return response.choices[0].message.content
@@ -46,7 +53,7 @@ def main():
 
     client = OpenAI(api_key=st.session_state.api_key)
 
-    st.text("Enter a scenario")
+    st.text("Type in a scenario. Like, 'My mom said, you never listen to me")
     scenario = st.text_input("Scenario", key="scenario_input", label_visibility="collapsed")
 
     audio = audiorecorder("Start Recording", "Stop Recording")
