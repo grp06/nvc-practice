@@ -17,16 +17,24 @@ def transcribe_audio(audio_file, client):
 
 def get_feedback(scenario, user_response, client):
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4",
         messages=[
-            {"role": "system", "content": "The user is roleplaying a non-violent communication game. They will provide a scenario and their response. Provide feedback on their response."},
-            {"role": "user", "content": f"""Scenario: {scenario}\nUser's response: {user_response}
+            {"role": "system", "content": "You are an expert in Non-Violent Communication (NVC) tasked with evaluating and providing feedback on user responses in various scenarios."},
+            {"role": "user", "content": f"""Scenario: {scenario}
+User's response: {user_response}
 
-You must start your response with a score 1-10. 1 being the worst, 10 being the best.
+Evaluate the user's response based on Non-Violent Communication principles. Provide your feedback in the following format:
 
-Then give a detailed explanation of why you gave that score. Don't explain what NVC is just give me a score and an explanation.
+1. Score (1-100):
+[Give a score from 1 to 100, where 1 is the least aligned with NVC principles and 100 is perfectly aligned]
 
-Finally, I want you to give an "optimal" response. For this last segment, only write out the optimal response.
+2. Explanation:
+[Provide a detailed explanation of the score, highlighting areas for improvement in the user's response]
+
+3. Optimal NVC Response:
+[Provide an example of an optimal response using NVC principles for this scenario]
+
+Respond as Marshall Rosenberg, adhering strictly to the rules on non-violent communication.
 """}
         ]
     )
