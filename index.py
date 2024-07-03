@@ -3,6 +3,7 @@ from openai import OpenAI
 import os
 from audiorecorder import audiorecorder
 import io
+from streamlit_javascript import st_javascript
 
 
 
@@ -31,28 +32,46 @@ Finally, I want you to give an "optimal" response. For this last segment, only w
     )
     return response.choices[0].message.content
 
+def get_api_key_from_local_storage():
+    return st.session_state.get('openai_api_key')
+
+def save_api_key_to_local_storage(api_key):
+    st.session_state['openai_api_key'] = api_key
+
 def main():
     st.title("Non-Violent Communication Practice")
 
-    if 'api_key' not in st.session_state:
-        st.session_state.api_key = None
+    if 'openai_api_key' not in st.session_state:
+        st.session_state.openai_api_key = None
+    
+    if 'refresh_counter' not in st.session_state:
+        st.session_state.refresh_counter = 0
 
-    if not st.session_state.api_key:
+    if not st.session_state.openai_api_key:
         api_key = st.text_input("Enter your OpenAI API key:", type="password")
         if st.button("Submit API Key"):
             if api_key:
-                st.session_state.api_key = api_key
+                save_api_key_to_local_storage(api_key)
                 st.experimental_rerun()
             else:
                 st.warning("Please enter an API key.")
         return
 
-    client = OpenAI(api_key=st.session_state.api_key)
+    client = OpenAI(api_key=st.session_state.openai_api_key)
+
+    if st.button("Refresh"):
+        for key in list(st.session_state.keys()):
+            if key not in ['openai_api_key', 'refresh_counter']:
+                del st.session_state[key]
+        st.session_state.refresh_counter += 1
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.experimental_rerun()
 
     st.text("Type in a scenario. Like, 'My mom said, you never listen to me")
     scenario = st.text_input("Scenario", key="scenario_input", label_visibility="collapsed")
 
-    audio = audiorecorder("Start Recording", "Stop Recording")
+    audio = audiorecorder("Start Recording", "Stop Recording", key=f"audio_{st.session_state.refresh_counter}")
     
     if len(audio) > 0:
         audio_file = io.BytesIO(audio.export().read())

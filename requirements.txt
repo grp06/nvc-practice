@@ -1,4 +1,4 @@
 streamlit
 openai
 streamlit-audiorecorder
-ffmpeg-python
+streamlit-javascript
